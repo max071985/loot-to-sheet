@@ -2,6 +2,8 @@ from cv2 import cv2
 import numpy as np
 from singleton import Singleton
 from pathlib import Path
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
 DEFAULT_TEMPLATE_MATCHING_THRESHOLD = 0.5
 NMS_THRESHOLD = 0.2
@@ -38,6 +40,7 @@ class ImageProcessingManager(metaclass=Singleton):
                 # Template(image_path="vinegar4.png", label="5", color=(125, 255, 125)),
             ]
         self._detections = []
+        self._cropped_detections = []
 
     def compute_iou(self, boxA, boxB):
         xA = max(boxA["TOP_LEFT_X"], boxB["TOP_LEFT_X"])
@@ -100,14 +103,38 @@ class ImageProcessingManager(metaclass=Singleton):
             )
             image_with_detections = self._image.copy()
             for detection in self._detections:
-                cv2.rectangle(
+                # Draw a rectangle around the detection:
+                # self.drawSquareAroundDetection(detection, image_with_detections)
+                # Create a new image from the detection and add it to _cropped_detections[] list:
+                detection_img = image_with_detections[detection["TOP_LEFT_Y"]: detection["BOTTOM_RIGHT_Y"], detection["TOP_LEFT_X"]: detection["BOTTOM_RIGHT_X"]]
+                self._cropped_detections.append(detection_img)
+            Path("output").mkdir(
+                parents=True, exist_ok=True
+            )  # Creates an output folder in case it doesn't exist.
+            for cropped_detection in self._cropped_detections:
+                self.readCroppedImage(cropped_detection)
+            # cv2.imwrite(OUTPUT_FILE_PATH, image_with_detections) # Writes a new image file, with the new drawn detection squares.
+        except Exception as e:
+            print(e)
+        else:
+            print(
+                f"Successfully processed the image. The output is located at: {OUTPUT_FILE_PATH}"
+            )
+
+    def drawSquareAroundDetection(self, detection, image_with_detections):
+        """Draw a square around the detection.
+
+        Args:
+            detection ([type]): [description]
+        """
+        cv2.rectangle(
                     image_with_detections,
                     (detection["TOP_LEFT_X"], detection["TOP_LEFT_Y"]),
                     (detection["BOTTOM_RIGHT_X"], detection["BOTTOM_RIGHT_Y"]),
                     detection["COLOR"],
                     2,
                 )
-                cv2.putText(
+        cv2.putText(
                     image_with_detections,
                     f"{detection['LABEL']} - {detection['MATCH_VALUE']}",
                     (detection["TOP_LEFT_X"] + 2, detection["TOP_LEFT_Y"] + 20),
@@ -117,16 +144,9 @@ class ImageProcessingManager(metaclass=Singleton):
                     1,
                     cv2.LINE_AA,
                 )
-            Path("output").mkdir(
-                parents=True, exist_ok=True
-            )  # Create output folder in case it doesn't exist.
-            cv2.imwrite(OUTPUT_FILE_PATH, image_with_detections)
-        except Exception as e:
-            print(e)
-        else:
-            print(
-                f"Successfully processed the image. The output is located at: {OUTPUT_FILE_PATH}"
-            )
 
-
+    def readCroppedImage(self, img):
+        ret,thresh1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
+        text = pytesseract.image_to_string(thresh1)
+        print(f"Detected integers in the image: {''.join(filter(str.isdigit, text))}")
 # TODO: To get a precise location of the item frame, we'll have to go over multiple different templates, they will share location of the desired 'real' item, might be a bit heavy on the processing but will add higher % of success.
