@@ -23,15 +23,18 @@ class Template:
         self.template_height, self.template_width = self.template.shape[:2]
         self.matching_threshold = matching_threshold
 
+
 class ImageProcessingManager(metaclass=Singleton):
-    def __init__(self, image_path = "input_image/test.png", templates = None):
-        self._image = cv2.imread(image_path) #Image to apply the templates on.
+    def __init__(self, image_path="input_image/test.png", templates=None):
+        self._image = cv2.imread(image_path)  # Image to apply the templates on.
         if templates is None:
             self._templates = [
                 # Template(image_path="vin.png", label="1", color=(0, 0, 255)),
-                #Template(image_path="vintest.png", label="2", color=(0, 255, 0)),
+                # Template(image_path="vintest.png", label="2", color=(0, 255, 0)),
                 # Template(image_path="vinegar2.png", label="3", color=(0, 255, 255)),
-                Template(image_path="templates/vinegar3.png", label="4", color=(125, 0, 255)),
+                Template(
+                    image_path="templates/vinegar3.png", label="4", color=(125, 0, 255)
+                ),
                 # Template(image_path="vinegar4.png", label="5", color=(125, 255, 125)),
             ]
         self._detections = []
@@ -50,7 +53,6 @@ class ImageProcessingManager(metaclass=Singleton):
         )
         iou = interArea / float(boxAArea + boxBArea - interArea)
         return iou
-
 
     def non_max_suppression(
         self,
@@ -75,10 +77,12 @@ class ImageProcessingManager(metaclass=Singleton):
         try:
             for template in self._templates:
                 template_matching = cv2.matchTemplate(
-                template.template, self._image, cv2.TM_CCOEFF_NORMED
+                    template.template, self._image, cv2.TM_CCOEFF_NORMED
                 )
 
-                match_locations = np.where(template_matching >= template.matching_threshold)
+                match_locations = np.where(
+                    template_matching >= template.matching_threshold
+                )
 
                 for (x, y) in zip(match_locations[1], match_locations[0]):
                     match = {
@@ -113,11 +117,16 @@ class ImageProcessingManager(metaclass=Singleton):
                     1,
                     cv2.LINE_AA,
                 )
-            Path('output').mkdir(parents=True, exist_ok=True) # Create output folder in case it doesn't exist.
+            Path("output").mkdir(
+                parents=True, exist_ok=True
+            )  # Create output folder in case it doesn't exist.
             cv2.imwrite(OUTPUT_FILE_PATH, image_with_detections)
         except Exception as e:
             print(e)
         else:
-            print(f"Successfully processed the image. The output is located at: {OUTPUT_FILE_PATH}")
+            print(
+                f"Successfully processed the image. The output is located at: {OUTPUT_FILE_PATH}"
+            )
 
-#TODO: To get a precise location of the item frame, we'll have to go over multiple different templates, they will share location of the desired 'real' item, might be a bit heavy on the processing but will add higher % of success.
+
+# TODO: To get a precise location of the item frame, we'll have to go over multiple different templates, they will share location of the desired 'real' item, might be a bit heavy on the processing but will add higher % of success.

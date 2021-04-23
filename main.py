@@ -1,6 +1,7 @@
 from spreadsheetManager import SpreadsheetManager
 from templateProcessing import ImageProcessingManager
 
+
 def main():
     imageProc_Manager = ImageProcessingManager()
     spreadsheet_Manager = SpreadsheetManager()
