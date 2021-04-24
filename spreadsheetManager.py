@@ -12,7 +12,8 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 
 class SpreadsheetManager(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self, spreadsheet_id):
+        self._id = spreadsheet_id
         self._creds = None
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
@@ -40,14 +41,13 @@ class SpreadsheetManager(metaclass=Singleton):
         else:
             print("Successfully connected to Spreadsheets")
 
-    def create_Spreadsheet(self, spreadsheet_body=None):
-        if spreadsheet_body is None:
-            spreadsheet_body = {
-                "properties": {
-                    "title": Title,
-                }
-            }
-        request = self._service.spreadsheets().create(body=spreadsheet_body)
-        response = request.execute()
-
-        pprint(response)
+    def getData(self, ranges, value_render_option = None, dateTime_render_option = None):
+        self._service = build("sheets", "v4", credentials=self._creds)
+        try:
+            request = self._service.spreadsheets().values().batchGet(spreadsheetId=self._id, ranges=ranges, valueRenderOption=value_render_option, dateTimeRenderOption=dateTime_render_option)
+            response = request.execute()
+        except Exception as e:
+            print(f"Failed to get values. error: \n{e}")
+        else:
+            print("Successfully gathered the data:")
+            pprint(response)

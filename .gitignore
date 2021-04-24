@@ -143,3 +143,8 @@ token.json
 
 #VSCode
 .vscode/
+
+#Folders
+output
+input_image
+templates

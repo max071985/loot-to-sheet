@@ -1,3 +1,4 @@
+from skimage.metrics import structural_similarity as ssim
 from cv2 import cv2
 import numpy as np
 from singleton import Singleton
@@ -9,6 +10,13 @@ DEFAULT_TEMPLATE_MATCHING_THRESHOLD = 0.5
 NMS_THRESHOLD = 0.2
 OUTPUT_FILE_PATH = f"output/result.jpeg"
 
+USER_UI_SCALE = 1
+BDO_ITEM_SQUARE_WIDTH = 45 * USER_UI_SCALE
+BDO_ITEM_SQUARE_HEIGHT = 45 * USER_UI_SCALE
+BDO_ITEM_SQUARE_PADDING = 4 * USER_UI_SCALE
+
+INITIAL_X_PADDING = 4 * USER_UI_SCALE
+INITIAL_Y_PADDING = 12 * USER_UI_SCALE
 
 class Template:
     def __init__(
@@ -27,20 +35,18 @@ class Template:
 
 
 class ImageProcessingManager(metaclass=Singleton):
-    def __init__(self, image_path="input_image/test.png", templates=None):
+    def __init__(self, image_path="input_image/ronaros1.png", templates=None):
         self._image = cv2.imread(image_path)  # Image to apply the templates on.
         if templates is None:
             self._templates = [
-                # Template(image_path="vin.png", label="1", color=(0, 0, 255)),
-                # Template(image_path="vintest.png", label="2", color=(0, 255, 0)),
-                # Template(image_path="vinegar2.png", label="3", color=(0, 255, 255)),
                 Template(
-                    image_path="templates/vinegar3.png", label="4", color=(125, 0, 255)
+                    image_path="templates/aa_temp.png", label="1", color=(125, 0, 255)
                 ),
-                # Template(image_path="vinegar4.png", label="5", color=(125, 255, 125)),
             ]
         self._detections = []
         self._cropped_detections = []
+        self._squares = []
+        self._square_img = []
 
     def compute_iou(self, boxA, boxB):
         xA = max(boxA["TOP_LEFT_X"], boxB["TOP_LEFT_X"])
@@ -104,16 +110,16 @@ class ImageProcessingManager(metaclass=Singleton):
             image_with_detections = self._image.copy()
             for detection in self._detections:
                 # Draw a rectangle around the detection:
-                # self.drawSquareAroundDetection(detection, image_with_detections)
+                self.drawSquareAroundDetection(detection, image_with_detections)
                 # Create a new image from the detection and add it to _cropped_detections[] list:
                 detection_img = image_with_detections[detection["TOP_LEFT_Y"]: detection["BOTTOM_RIGHT_Y"], detection["TOP_LEFT_X"]: detection["BOTTOM_RIGHT_X"]]
                 self._cropped_detections.append(detection_img)
             Path("output").mkdir(
                 parents=True, exist_ok=True
             )  # Creates an output folder in case it doesn't exist.
-            for cropped_detection in self._cropped_detections:
-                self.readCroppedImage(cropped_detection)
-            # cv2.imwrite(OUTPUT_FILE_PATH, image_with_detections) # Writes a new image file, with the new drawn detection squares.
+            # Draw the item squares
+            self.findItemSquares(image_with_detections, 15, self._detections[0]["TOP_LEFT_X"], self._detections[0]["BOTTOM_RIGHT_Y"])
+            cv2.imwrite(OUTPUT_FILE_PATH, image_with_detections) # Writes a new image file, with the new drawn detection squares.
         except Exception as e:
             print(e)
         else:
@@ -145,8 +151,95 @@ class ImageProcessingManager(metaclass=Singleton):
                     cv2.LINE_AA,
                 )
 
+    def findItemSquares(self, image_with_detections, amount, init_top_left_x, init_top_left_y):
+        """Go over inventory rows for amount of times
+
+        Args:
+            image_with_detections (cv2 image): image that will have the detections
+            amount (int): Number of squares to go over
+            init_x (int): X Location of the first square in the row (TOP LEFT)
+            init_y (int): Y Location of the row (TOP LEFT)
+        """
+        x, y = init_top_left_x, init_top_left_y
+
+        # Find the first square's top left corner
+        x += INITIAL_X_PADDING
+        y += INITIAL_Y_PADDING
+
+        for i in range(amount):
+            if i % 8 == 0 and i > 0:
+                # Go down 1 row (reset X to start and increase Y amount to match next row)
+                x = init_top_left_x + INITIAL_X_PADDING
+                y = init_top_left_y + INITIAL_Y_PADDING + BDO_ITEM_SQUARE_HEIGHT + BDO_ITEM_SQUARE_PADDING * 2 + 1
+            square_detection = {
+                "TOP_LEFT_X": x,
+                "TOP_LEFT_Y": y,
+                "BOTTOM_RIGHT_X": x + BDO_ITEM_SQUARE_WIDTH,
+                "BOTTOM_RIGHT_Y": y + BDO_ITEM_SQUARE_HEIGHT,
+                "MATCH_VALUE": 0,
+                "LABEL": i,
+                "COLOR": (0, 0, 255),
+            }
+            self._squares.append(square_detection)
+            self._square_img.append(image_with_detections[y:y + BDO_ITEM_SQUARE_HEIGHT, x:x + BDO_ITEM_SQUARE_WIDTH])
+            # Go to next square top left corner
+            x += BDO_ITEM_SQUARE_WIDTH + BDO_ITEM_SQUARE_PADDING * 2 + 1
+        # Draw the squares on the image
+        for detection in self._squares:
+            self.drawSquareAroundDetection(detection, image_with_detections)
+        # Go over each square and match it to the templates
+        self.matchItemToTemplates()
+            
+
     def readCroppedImage(self, img):
         ret,thresh1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
         text = pytesseract.image_to_string(thresh1)
         print(f"Detected integers in the image: {''.join(filter(str.isdigit, text))}")
+
+    def matchItemToTemplates(self):
+        ronaros_loot_table = [
+            Template(
+                    image_path="templates/ronaros_drops/bs_armor.png", label=r"Black Stone Armor", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/caphra.png", label=r"Caphra's Stone", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/forest_fury.png", label=r"Forest Fury", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/guardian_stone.png", label=r"Guardian Life Stone", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/lem_gloves.png", label=r"Lemoria Gloves", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/manshaum_doll.png", label=r"Manshaum Doll", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/pure_forest_breath.png", label=r"Pure Forest Breath", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/ronaros_ring.png", label=r"Ronaros Ring", color=(125, 0, 255)
+            ),
+            Template(
+                    image_path="templates/ronaros_drops/rumbling_earth_shard.png", label=r"Rumbling Earth Shard", color=(125, 0, 255)
+            ),
+        ]
+        i = 0
+        for image in self._square_img:
+            i += 1
+            match_dict = {}
+            for template in ronaros_loot_table:
+                percentage = self.calculateImageResemblance(image,template.template) * 100
+                match_dict[template.label] = percentage
+            print(f"\n\n\nItem num: {i}\nBest match: {max(match_dict, key=lambda key: match_dict[key])}\n")
+            # for key, value in match_dict.items():
+                # print(f"{key}: {value}%")
+
+    def calculateImageResemblance(self, image1, image2):
+        image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+        image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+        return ssim(cv2.resize(image1, (50,50)), cv2.resize(image2, (50,50)), multichannel=True)
+
 # TODO: To get a precise location of the item frame, we'll have to go over multiple different templates, they will share location of the desired 'real' item, might be a bit heavy on the processing but will add higher % of success.
