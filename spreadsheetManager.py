@@ -12,6 +12,11 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 
 class SpreadsheetManager(metaclass=Singleton):
+    """Manage spreadsheet interaction
+
+    Args:
+        metaclass : Singleton class. Defaults to Singleton.
+    """
     def __init__(self, spreadsheet_id):
         self._id = spreadsheet_id
         self._creds = None
@@ -42,6 +47,13 @@ class SpreadsheetManager(metaclass=Singleton):
             print("Successfully connected to Spreadsheets")
 
     def getData(self, ranges, value_render_option = None, dateTime_render_option = None):
+        """Get sheet values from the spreadsheet 
+
+        Args:
+            ranges ([str]): [Table to get values from (e.g: ranges["a1:a3", "b1:b2"])]
+            value_render_option ([type], optional): [idk really]. Defaults to None.
+            dateTime_render_option ([type], optional): [idk really]. Defaults to None.
+        """
         self._service = build("sheets", "v4", credentials=self._creds)
         try:
             request = self._service.spreadsheets().values().batchGet(spreadsheetId=self._id, ranges=ranges, valueRenderOption=value_render_option, dateTimeRenderOption=dateTime_render_option)
