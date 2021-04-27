@@ -4,13 +4,17 @@ import numpy as np
 from singleton import Singleton
 from pathlib import Path
 import pytesseract
+from fileManager import FileManager
 pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
-#Constants
+# Constants
 DEFAULT_TEMPLATE_MATCHING_THRESHOLD = 0.5 # Threshold for template matching resemblance
 NMS_THRESHOLD = 0.2 # Threshold for overlapping function
 OUTPUT_FILE_PATH = f"output/result.jpeg"
+INPUT_PATH = f"input_image"
+TEMPLATE_PATH = f"templates"
 
+# BDO UI Measurements
 USER_UI_SCALE = 1
 BDO_ITEM_SQUARE_WIDTH = 45 * USER_UI_SCALE
 BDO_ITEM_SQUARE_HEIGHT = 45 * USER_UI_SCALE
@@ -48,7 +52,7 @@ class ImageProcessingManager(metaclass=Singleton):
         if templates is None:
             self._templates = [
                 Template(
-                    image_path="templates/aa_temp.png", label="1", color=(125, 0, 255)
+                    image_path="templates/main/aa_temp.png", label="1", color=(125, 0, 255)
                 ),
             ]
         self._detections = []
