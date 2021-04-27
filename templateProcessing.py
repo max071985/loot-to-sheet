@@ -40,7 +40,7 @@ class Template:
         self.template_height, self.template_width = self.template.shape[:2]
         self.matching_threshold = matching_threshold
 
-
+#TODO: Add image processing queue
 class ImageProcessingManager(metaclass=Singleton):
     """Handles all image related stuff
 
@@ -48,8 +48,8 @@ class ImageProcessingManager(metaclass=Singleton):
         metaclass Singleton instance
     """
     def __init__(self, image_path="input_image/ronaros1.png", templates=None):
-        self._image = cv2.imread(image_path)  # Image to apply the templates on.
-        if templates is None:
+        self._image = cv2.imread(image_path)  # Image to process.
+        if templates is None: #Default go-to template.
             self._templates = [
                 Template(
                     image_path="templates/main/aa_temp.png", label="1", color=(125, 0, 255)
@@ -59,6 +59,9 @@ class ImageProcessingManager(metaclass=Singleton):
         self._cropped_detections = []
         self._squares = []
         self._square_img = []
+
+    def setImage(self, image_path):
+        self._image = cv2.imread(image_path)
 
     def compute_iou(self, boxA, boxB):
         xA = max(boxA["TOP_LEFT_X"], boxB["TOP_LEFT_X"])

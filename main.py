@@ -13,17 +13,19 @@ SPREADSHEET_ID = "1Sm6mlw-HxIqW3fZdIcm9mxJwAnCcxZjMXHNjm2JxPWI"
 root = tk.Tk()
 root.geometry("1024x576")
 
+#TODO: Reorganize this whole file into a designated UI class.
+#Init global vars
 image_list = []
 btnOpenFiles, btnDeleteImages, loadedFiles = None, None, None
 
+#Init global agents
+image_processing_agent = ImageProcessingManager()
+# spreadsheet_agent = SpreadsheetManager(SPREADSHEET_ID)
 
 def main():
+    global image_processing_agent
     FileManager.clear_folder(templateProcessing.INPUT_PATH)
     init_UI()
-    #imageProc_Manager = ImageProcessingManager()
-    #spreadsheet_Manager = SpreadsheetManager(SPREADSHEET_ID)
-
-    #imageProc_Manager.processImage()
     
 def init_UI():
     global btnOpenFiles, btnDeleteImages, loadedFiles
@@ -39,7 +41,7 @@ def init_UI():
     root.mainloop()
 
 def load_Images():
-    global loadedFiles, image_list
+    global loadedFiles, image_list, image_processing_agent
     files = fd.askopenfilenames(parent=root, title='Choose image files')
     for f in files:
         try:
@@ -51,7 +53,8 @@ def load_Images():
         except Exception as e:
             print(e)
         else:
-            print("Successfully loaded all images.")
+            #TODO: Add image processing queue for a case where there are more than 1 image imputted.
+            pass
 
 def delete_Images():
     global loadedFiles, image_list
