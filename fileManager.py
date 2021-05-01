@@ -27,9 +27,14 @@ class FileManager(metaclass=Singleton):
 
         Args:
             path ([str]): [folder path]
-            extension ([str[]]): [file extension (e.g: [".png"])]
+            extension ([str[]]): [file extension (e.g: ["png"])]
 
         Returns:
             [array]: [list of file names]
         """
         return [item for i in [glob.glob('%s/*.%s' % (path, ext)) for ext in extension] for item in i]
+
+    @staticmethod
+    def get_filename_from_path(path):
+        head, tail = os.path.split(path)
+        return tail

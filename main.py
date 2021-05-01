@@ -16,11 +16,20 @@ root.geometry("1024x576")
 #TODO: Reorganize this whole file into a designated UI class.
 #Init global vars
 image_list = []
-btnOpenFiles, btnDeleteImages, loadedFiles = None, None, None
+btnOpenFiles, btnDeleteImages, btnProcess ,loadedFiles, lblOutput = None, None, None, None, None
 
 #Init global agents
 image_processing_agent = ImageProcessingManager()
+spreadsheet_agent = SpreadsheetManager(SPREADSHEET_ID)
 # spreadsheet_agent = SpreadsheetManager(SPREADSHEET_ID)
+
+class InputImage():
+    def __init__(self, image_path):
+        self.image_path = image_path
+        temp = Image.open(image_path) #Get object
+        temp.thumbnail(UI_IMAGE_SIZE, Image.ANTIALIAS) #Resize
+        self.image_Obj = ImageTk.PhotoImage(temp)
+
 
 def main():
     global image_processing_agent
@@ -28,7 +37,7 @@ def main():
     init_UI()
     
 def init_UI():
-    global btnOpenFiles, btnDeleteImages, loadedFiles
+    global btnOpenFiles, btnDeleteImages, loadedFiles, btnProcess, lblOutput
     btnOpenFiles = tk.Button(root, text="Import images", command=load_Images)
     btnOpenFiles.grid(column=0, row=0)
     
@@ -38,6 +47,12 @@ def init_UI():
 
     btnDeleteImages = tk.Button(root, text="Delete images", command=delete_Images)
     btnDeleteImages.grid(column=0, row = 2)
+
+    btnProcess = tk.Button(root, text="Process images", command=process_Images)
+    btnProcess.grid(column=1, row=2)
+
+    lblOutput = tk.Label(root)
+    lblOutput.grid(column = 0, row = 3)
     root.mainloop()
 
 def load_Images():
@@ -45,11 +60,9 @@ def load_Images():
     files = fd.askopenfilenames(parent=root, title='Choose image files')
     for f in files:
         try:
-            temp = Image.open(f)
-            temp.thumbnail(UI_IMAGE_SIZE, Image.ANTIALIAS)
-            new_image = ImageTk.PhotoImage(temp)
+            new_image = InputImage(f)
             image_list.append(new_image)
-            loadedFiles.image_create(tk.END, image=new_image, padx=IMAGE_PADDING)
+            loadedFiles.image_create(tk.END, image=new_image.image_Obj, padx=IMAGE_PADDING)
         except Exception as e:
             print(e)
         else:
@@ -60,6 +73,19 @@ def delete_Images():
     global loadedFiles, image_list
     image_list.clear()
     loadedFiles.delete('1.0', tk.END)
+
+def process_Images():
+    global image_processing_agent, image_list, lblOutput
+    i = 0
+    for image in image_list:
+        image_processing_agent.setImage(image.image_path)
+        image_processing_agent.setLootTable("blood_wolf")
+        print("Processing image... %d" % i)
+        image_processing_agent.processImage()
+        print("Done %d." % i)
+    print("Finished processing all the images.\nResults:\n")
+    lblOutput['text'] = image_processing_agent.getTotalMatches()
+    image_processing_agent.test()
 
 if __name__ == "__main__":
     main()

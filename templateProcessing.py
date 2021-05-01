@@ -23,6 +23,7 @@ BDO_ITEM_SQUARE_PADDING = 4 * USER_UI_SCALE
 INITIAL_X_PADDING = 4 * USER_UI_SCALE
 INITIAL_Y_PADDING = 12 * USER_UI_SCALE
 
+GLOBAL_MATCHES = []
 class Template:
     """Represents a template image
     """
@@ -62,6 +63,9 @@ class ImageProcessingManager(metaclass=Singleton):
 
     def setImage(self, image_path):
         self._image = cv2.imread(image_path)
+
+    def setLootTable(self, loot_table_name):
+        self.loot_table_name = loot_table_name
 
     def compute_iou(self, boxA, boxB):
         xA = max(boxA["TOP_LEFT_X"], boxB["TOP_LEFT_X"])
@@ -123,6 +127,9 @@ class ImageProcessingManager(metaclass=Singleton):
                         "COLOR": template.color,
                     }
                     self._detections.append(match)
+            if len(self._detections) < 1:
+                print("Unable to detect a template with this treshold.")
+                return 0
             # Get rid of overlapping/overstacking (shouldn't exist, but might)
             self._detections = self.non_max_suppression(
                 self._detections, non_max_suppression_threshold=NMS_THRESHOLD
@@ -144,7 +151,7 @@ class ImageProcessingManager(metaclass=Singleton):
             # Save a new image with all the drawn detections (DEBUGGING)
             cv2.imwrite(OUTPUT_FILE_PATH, image_with_detections) 
         except Exception as e: #TODO
-            print(e)
+            print(e.with_traceback())
         else:
             print(
                 f"Successfully processed the image. The output is located at: {OUTPUT_FILE_PATH}"
@@ -228,43 +235,22 @@ class ImageProcessingManager(metaclass=Singleton):
     def matchItemToTemplates(self):
         """Test function for now! go over loot table and compare with acquired loot.
         """
-        ronaros_loot_table = [
-            Template(
-                    image_path="templates/ronaros_drops/bs_armor.png", label=r"Black Stone Armor", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/caphra.png", label=r"Caphra's Stone", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/forest_fury.png", label=r"Forest Fury", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/guardian_stone.png", label=r"Guardian Life Stone", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/lem_gloves.png", label=r"Lemoria Gloves", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/manshaum_doll.png", label=r"Manshaum Doll", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/pure_forest_breath.png", label=r"Pure Forest Breath", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/ronaros_ring.png", label=r"Ronaros Ring", color=(125, 0, 255)
-            ),
-            Template(
-                    image_path="templates/ronaros_drops/rumbling_earth_shard.png", label=r"Rumbling Earth Shard", color=(125, 0, 255)
-            ),
+        templates = FileManager.get_files(f"templates/{self.loot_table_name}", ["png", "jpeg", "jpg"])
+        print(templates)
+        loot_table = [
+            Template(tmp, FileManager.get_filename_from_path(tmp), (125, 125, 125)) for tmp in templates
         ]
+        print(f"Loot table: {loot_table}")
         i = 0
         for image in self._square_img:
             i += 1
             match_dict = {}
-            for template in ronaros_loot_table:
+            for template in loot_table:
                 percentage = self.calculateImageResemblance(image,template.template) * 100
                 match_dict[template.label] = percentage
             print(f"\n\n\nItem num: {i}\nBest match: {max(match_dict, key=lambda key: match_dict[key])}\n")
+            global GLOBAL_MATCHES
+            GLOBAL_MATCHES.append(max(match_dict, key=lambda key: match_dict[key]))
             # for key, value in match_dict.items():
                 # print(f"{key}: {value}%")
 
@@ -278,8 +264,15 @@ class ImageProcessingManager(metaclass=Singleton):
         Returns:
             [int]: [image similarity (0-1) where 1 is similar and 0 is different]
         """
-        image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
-        image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+        image1_T = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+        image2_T = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
         return ssim(cv2.resize(image1, (50,50)), cv2.resize(image2, (50,50)), multichannel=True)
+
+    @staticmethod
+    def getTotalMatches():
+        return GLOBAL_MATCHES
+
+    def test(self):
+        self.readCroppedImage(self._square_img[0])
 
 # TODO: To get a precise location of the item frame, we'll have to go over multiple different templates, they will share location of the desired 'real' item, might be a bit heavy on the processing but will add higher % of success.
