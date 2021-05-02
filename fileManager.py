@@ -1,5 +1,7 @@
 from singleton import Singleton
 import os, shutil, glob
+
+
 class FileManager(metaclass=Singleton):
     def __init__(self):
         pass
@@ -15,7 +17,7 @@ class FileManager(metaclass=Singleton):
                     shutil.rmtree(file_path)
                 print("Successfully removed %s" % file_path)
             except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (file_path, e))
+                print("Failed to delete %s. Reason: %s" % (file_path, e))
 
     @staticmethod
     def upload_files(files, path):
@@ -32,7 +34,11 @@ class FileManager(metaclass=Singleton):
         Returns:
             [array]: [list of file names]
         """
-        return [item for i in [glob.glob('%s/*.%s' % (path, ext)) for ext in extension] for item in i]
+        return [
+            item
+            for i in [glob.glob("%s/*.%s" % (path, ext)) for ext in extension]
+            for item in i
+        ]
 
     @staticmethod
     def get_filename_from_path(path):

@@ -17,6 +17,7 @@ class SpreadsheetManager(metaclass=Singleton):
     Args:
         metaclass : Singleton class. Defaults to Singleton.
     """
+
     def __init__(self, spreadsheet_id):
         self._id = spreadsheet_id
         self._creds = None
@@ -46,8 +47,8 @@ class SpreadsheetManager(metaclass=Singleton):
         else:
             print("Successfully connected to Spreadsheets")
 
-    def getData(self, ranges, value_render_option = None, dateTime_render_option = None):
-        """Get sheet values from the spreadsheet 
+    def getData(self, ranges, value_render_option=None, dateTime_render_option=None):
+        """Get sheet values from the spreadsheet
 
         Args:
             ranges ([str]): [Table to get values from (e.g: ranges["a1:a3", "b1:b2"])]
@@ -56,7 +57,16 @@ class SpreadsheetManager(metaclass=Singleton):
         """
         self._service = build("sheets", "v4", credentials=self._creds)
         try:
-            request = self._service.spreadsheets().values().batchGet(spreadsheetId=self._id, ranges=ranges, valueRenderOption=value_render_option, dateTimeRenderOption=dateTime_render_option)
+            request = (
+                self._service.spreadsheets()
+                .values()
+                .batchGet(
+                    spreadsheetId=self._id,
+                    ranges=ranges,
+                    valueRenderOption=value_render_option,
+                    dateTimeRenderOption=dateTime_render_option,
+                )
+            )
             response = request.execute()
         except Exception as e:
             print(f"Failed to get values. error: \n{e}")
