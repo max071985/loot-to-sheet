@@ -10,7 +10,7 @@ This program will take your in-game screenshot(s) and process it directly into y
 ## How to run? [WIP]
 Requires Python 3.9.4.
 
-## How does it work?
+## How **will** it work?
 
 - After pressing the `Process images` button, the program will do the following:
   1) Locate your inventory items via TemplateMatching with a preloaded template that finds your `Auto Arrange` checkbox.
