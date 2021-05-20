@@ -1,5 +1,5 @@
 # **BDO Loot to Sheet**
-This program will take your in-game screenshot and process it directly into your spreadsheet.
+This program will take your in-game screenshot(s) and process it directly into your spreadsheet.
 
 ## How to use?
 
