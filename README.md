@@ -20,18 +20,6 @@ Requires Python 3.9.4.
   5) If the items are stackable, it will find the amount of items you hold.
   6) Update a spreadsheet with the data it acquired from the image.
 
-## Progression checklist:
-
-- Able to locate inventory slots.
-- Able to read numbers (used on stacked items).
-- Accepts multiple image uploads.
-
-## TODO:
-
-- EVERYTHING that deals with spreadsheets.
-- Create a starter DB with templates.
-- Improve UI.
-
 
 ## LIMITATIONS:
 
