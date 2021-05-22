@@ -11,8 +11,8 @@ This program will take your in-game screenshot(s) and process it directly into y
 Requires Python 3.9.4.
 
 Deps:
-scikit-image
-OpenCV2
+scikit-image,
+OpenCV2,
 Pytesseract
 
 ## How **will** it work?
