@@ -10,6 +10,11 @@ This program will take your in-game screenshot(s) and process it directly into y
 ## How to run? [WIP]
 Requires Python 3.9.4.
 
+Deps:
+scikit-image
+OpenCV2
+Pytesseract
+
 ## How **will** it work?
 
 - After pressing the `Process images` button, the program will do the following:
